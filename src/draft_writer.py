@@ -5,7 +5,6 @@ import os
 from typing import Any
 from urllib import request
 
-
 DEFAULT_DRAFT_MODEL = "qwen2.5:32b"
 DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434"
 DEFAULT_OLLAMA_TIMEOUT_SECONDS = 180
