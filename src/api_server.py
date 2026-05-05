@@ -22,6 +22,7 @@ class DraftRequest(BaseModel):
     hero_photos: List[dict[str, Any]] = Field(default_factory=list)
     photos: List[dict[str, Any]] = Field(default_factory=list)
     tone: Optional[str] = None
+    voice_profile: Optional[dict[str, Any]] = None
 
 
 @app.get("/health")

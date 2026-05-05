@@ -75,8 +75,16 @@ def _llm_draft(
                 "summary": _text(photo.get("summary")) or "",
             })
 
-    prompt = f"""당신은 한국어 블로그 작가이다. 아래 개요(outline)와 사진 요약을 바탕으로 자연스러운 한국어 블로그 글을 마크다운 형식으로 작성하라.
+    voice_profile = payload.get("voice_profile") or {}
+    style_prompt = _text(voice_profile.get("style_prompt")) or ""
+    voice_section = (
+        f"\n사용자 말투 프로필:\n{style_prompt}\n"
+        if style_prompt
+        else ""
+    )
 
+    prompt = f"""당신은 한국어 블로그 작가이다. 아래 개요(outline)와 사진 요약을 바탕으로 자연스러운 한국어 블로그 글을 마크다운 형식으로 작성하라.
+{voice_section}
 개요:
 {json.dumps(outline_for_prompt, ensure_ascii=False, indent=2)}
 
@@ -94,6 +102,7 @@ def _llm_draft(
 - 각 섹션마다 2~4문장의 산문 단락을 작성한다.
 - 사실을 지어내거나 과장하지 말고, 개요와 사진 요약에 있는 내용만 바탕으로 작성한다.
 - 글의 마지막에는 `## 마무리` 섹션을 추가하여 전체 흐름을 자연스럽게 마무리한다.
+- 사용자 말투 프로필이 있으면 그 문체 지시를 최우선으로 따른다.
 - 마크다운 외에 다른 설명이나 메타 텍스트는 출력하지 말 것.
 """
 
