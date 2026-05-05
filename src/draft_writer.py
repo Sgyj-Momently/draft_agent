@@ -25,6 +25,15 @@ def create_draft(payload: dict[str, Any]) -> dict[str, Any]:
         if hero.get("group_id") and hero.get("hero_photo_id")
     }
 
+    if not sections:
+        markdown, section_count = _template_draft(title, sections, photos_by_id, hero_by_group)
+        return {
+            "draft_status": "ok",
+            "title": title,
+            "markdown": markdown,
+            "section_count": max(section_count, 1),
+        }
+
     try:
         markdown = _llm_draft(payload, title, sections, photos_by_id, hero_by_group)
         section_count = len(sections) or 1
@@ -82,9 +91,17 @@ def _llm_draft(
         if style_prompt
         else ""
     )
+    content_type = _text(payload.get("content_type")) or "블로그"
+    writing_instructions = _text(payload.get("writing_instructions")) or ""
+    instruction_section = (
+        f"\n사용자가 원하는 글 종류와 작성 방향:\n- 글 종류: {content_type}\n- 추가 요청: {writing_instructions}\n"
+        if writing_instructions or content_type
+        else ""
+    )
 
     prompt = f"""당신은 한국어 블로그 작가이다. 아래 개요(outline)와 사진 요약을 바탕으로 자연스러운 한국어 블로그 글을 마크다운 형식으로 작성하라.
 {voice_section}
+{instruction_section}
 개요:
 {json.dumps(outline_for_prompt, ensure_ascii=False, indent=2)}
 
@@ -101,6 +118,7 @@ def _llm_draft(
 - 불릿 리스트(-) 형식은 절대 사용하지 말고, 자연스러운 산문(prose) 문단으로 작성한다.
 - 각 섹션마다 2~4문장의 산문 단락을 작성한다.
 - 사실을 지어내거나 과장하지 말고, 개요와 사진 요약에 있는 내용만 바탕으로 작성한다.
+- 사용자가 요청한 글 종류와 작성 방향이 있으면 전체 구성과 표현에 반영한다.
 - 글의 마지막에는 `## 마무리` 섹션을 추가하여 전체 흐름을 자연스럽게 마무리한다.
 - 사용자 말투 프로필이 있으면 그 문체 지시를 최우선으로 따른다.
 - 마크다운 외에 다른 설명이나 메타 텍스트는 출력하지 말 것.
