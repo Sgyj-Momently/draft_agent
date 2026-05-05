@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
@@ -34,6 +35,38 @@ class DraftWriterTest(unittest.TestCase):
 
         self.assertEqual(result["section_count"], 1)
         self.assertIn("## 기록", result["markdown"])
+
+    def test_llm_failure_falls_back_to_template_with_sections(self) -> None:
+        payload = {
+            "outline": {
+                "title": "카페 산책",
+                "sections": [
+                    {
+                        "heading": "입구",
+                        "bullets": ["가게 앞에서 시작했다"],
+                        "supporting_photo_ids": ["file:a.jpg"],
+                    },
+                    {
+                        "heading": "테이블",
+                        "bullets": [],
+                        "group_id": "g-1",
+                    },
+                ],
+            },
+            "photos": [{"photo_id": "file:a.jpg", "file_name": "a.jpg", "summary": "카페 입구"}],
+            "hero_photos": [{"group_id": "g-1", "hero_photo_id": "file:missing.jpg"}],
+            "content_type": "음식후기",
+            "writing_instructions": "담백하게 써줘",
+        }
+
+        with patch("src.draft_writer.request.urlopen", side_effect=RuntimeError("ollama down")):
+            result = create_draft(payload)
+
+        self.assertEqual(result["draft_status"], "ok")
+        self.assertIn("## 입구", result["markdown"])
+        self.assertIn("![카페 입구](a.jpg)", result["markdown"])
+        self.assertIn("- 가게 앞에서 시작했다", result["markdown"])
+        self.assertIn("이 장면은 여행의 흐름을 자연스럽게 이어준다.", result["markdown"])
 
 
 class DraftApiTest(unittest.TestCase):
