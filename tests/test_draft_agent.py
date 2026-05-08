@@ -90,7 +90,7 @@ class DraftApiTest(unittest.TestCase):
         response = TestClient(app).get("/health")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"status": "ok"})
+        self.assertEqual(response.json(), {"status": "ok", "service": "draft_agent"})
 
     def test_create_draft_endpoint(self) -> None:
         with patch("src.draft_writer.request.urlopen", return_value=FakeOllamaResponse("# 제목\n")):
