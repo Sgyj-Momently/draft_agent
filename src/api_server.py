@@ -22,11 +22,14 @@ class DraftRequest(BaseModel):
     hero_photos: List[dict[str, Any]] = Field(default_factory=list)
     photos: List[dict[str, Any]] = Field(default_factory=list)
     tone: Optional[str] = None
+    voice_profile: Optional[dict[str, Any]] = None
+    content_type: Optional[str] = None
+    writing_instructions: Optional[str] = None
 
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok"}
+    return {"status": "ok", "service": "draft_agent"}
 
 
 @app.post("/api/v1/drafts")
