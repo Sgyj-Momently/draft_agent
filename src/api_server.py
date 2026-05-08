@@ -29,7 +29,7 @@ class DraftRequest(BaseModel):
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok"}
+    return {"status": "ok", "service": "draft_agent"}
 
 
 @app.post("/api/v1/drafts")
