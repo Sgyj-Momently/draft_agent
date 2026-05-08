@@ -1,3 +1,4 @@
+import json
 import unittest
 from unittest.mock import patch
 
@@ -7,10 +8,26 @@ from src.api_server import app
 from src.draft_writer import create_draft
 
 
+class FakeOllamaResponse:
+    def __init__(self, markdown: str) -> None:
+        self.markdown = markdown
+
+    def __enter__(self) -> "FakeOllamaResponse":
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        return None
+
+    def read(self) -> bytes:
+        return json.dumps({"response": self.markdown}).encode("utf-8")
+
+
 class DraftWriterTest(unittest.TestCase):
     def test_create_draft_uses_outline_and_supporting_photo(self) -> None:
-        result = create_draft(
-            {
+        with patch("src.draft_writer.request.urlopen", return_value=FakeOllamaResponse(
+            "# 카페 산책\n\n## 입구\n\n![카페 입구](a.jpg)\n\n가게 앞에서 시작했다.\n"
+        )):
+            result = create_draft({
                 "outline": {
                     "title": "카페 산책",
                     "sections": [
@@ -23,8 +40,7 @@ class DraftWriterTest(unittest.TestCase):
                 },
                 "photos": [{"photo_id": "file:a.jpg", "file_name": "a.jpg", "summary": "카페 입구"}],
                 "hero_photos": [],
-            }
-        )
+            })
 
         self.assertEqual(result["draft_status"], "ok")
         self.assertIn("# 카페 산책", result["markdown"])
@@ -77,14 +93,15 @@ class DraftApiTest(unittest.TestCase):
         self.assertEqual(response.json(), {"status": "ok"})
 
     def test_create_draft_endpoint(self) -> None:
-        response = TestClient(app).post(
-            "/api/v1/drafts",
-            json={
-                "project_id": "sample",
-                "outline": {"title": "제목", "sections": []},
-                "photos": [],
-            },
-        )
+        with patch("src.draft_writer.request.urlopen", return_value=FakeOllamaResponse("# 제목\n")):
+            response = TestClient(app).post(
+                "/api/v1/drafts",
+                json={
+                    "project_id": "sample",
+                    "outline": {"title": "제목", "sections": []},
+                    "photos": [],
+                },
+            )
 
         body = response.json()
         self.assertEqual(response.status_code, 200)
